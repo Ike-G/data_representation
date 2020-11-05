@@ -1,15 +1,10 @@
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
 class BinaryString:
     def __init__(self, binary):
         self.value = binary
 
     @property
     def value(self):
-        return self._value
+        return self._value 
 
     @property
     def msb(self):
@@ -31,31 +26,22 @@ class BinaryString:
     def __str__(self):
         return self.value
 
+    def __getitem__(self, key) : 
+        return self.value[key]
+
     def __add__(self, other):
-        return BinaryString(str(self) + str(other))
+        return BinaryString(str(self) + str(other)) # Converts both values to a binary string
 
     def __len__(self):
         return len(self.value)
 
     def __invert__(self):
-        inverted = ""
-        for bit in self.value:
-            if bit == "1":
-                inverted += "0"
-            else:
-                inverted += "1"
-        return BinaryString(inverted)
+        inverted = ''.join([str(int(not bool(int(bit)))) for bit in self.value])
+        return self.__class__(inverted)
 
-    def __int__(self):
-        column_value = 2 ** (len(self))
-        i=0
-        total=0
-        while column_value > 1:
-            column_value //= 2
-            if self.value[i] == "1":
-                total += column_value
-            i+=1
-        return total
+    def __int__(self) : 
+        return sum([2**(len(self)-i-1) for i in range(len(self)) if self[i]])
+        
 
 class FixPointNumber(BinaryString):
     def __init__(self, binary, point):
@@ -65,12 +51,7 @@ class FixPointNumber(BinaryString):
         super(FixPointNumber, self).__init__(binary)
 
     def __float__(self):
-        column_value = 2 ** (len(self)-1)
-        total = 0
-        for bit in self.value:
-            total += int(bit) * column_value
-            column_value /= 2
-        total = total * (2**(self._binary_point-len(self)))
+        total = int(super()) * (2**(self._binary_point-len(self)))
         return total
 
     def __int__(self):
@@ -84,12 +65,14 @@ class FixPointNumber(BinaryString):
 
 
 class TwosComplementNumber(BinaryString):
+    def __init__(self, binary) : 
+        self.value = binary
+
     def __abs__(self):
         """ Returns whole number part of twos complement number as BinaryString"""
         if self.is_negative():
-            self = self._convert(self)
-        else:
-            return self
+            self = self._convert()
+        return self
 
     def _convert(self):
         leading_one = len(self)
@@ -109,7 +92,7 @@ class TwosComplementNumber(BinaryString):
         return abs(self)
 
     def __neg__(self):
-        return self._convert(self)
+        return self._convert()
 
     def is_positive(self):
         if self.sign_bit == "1":
@@ -124,13 +107,12 @@ class TwosComplementNumber(BinaryString):
             return True
 
     def __int__(self):
-        if self.is_negative():
-            return -int(self.to_positive())
-        else:
-            return int(self)
+        bitCalc = lambda a, b: int(a[b])*(2**(len(a)-b-1)) 
+        twoComp = lambda x : sum([bitCalc(x, i) if i else -bitCalc(x, i) for i in range(len(x))])
+        return twoComp(self)
 
 
-class FloatingPointNumber():
+class FloatingPointNumber(TwosComplementNumber):
     def __init__(self, mantissa, exponent):
         self.mantissa = BinaryString(mantissa)
         self.exponent = BinaryString(exponent)
@@ -159,20 +141,26 @@ class FloatingPointNumber():
         return str(self.mantissa + self.exponent)
 
     def __int__(self):
+        bitCalc = lambda a, b: int(a[b])*(2**(len(a)-b-1)) 
+        twoComp = lambda x : sum([bitCalc(x, i) if i else -bitCalc(x, i) for i in range(len(x))]) # Defines twos complement conversion
+        exp = twoComp(self.exponent) # Convert exponent from twos complement
+        mantissa = twoComp(self.mantissa) # Convert mantissa from twos complement
+        return mantissa*(2**exp)
 
-        #Convert exponent from twos complement
-
-        #Convert to integer
-
-        #Convert mantissa from twos complement
-
-        #Convert to integer
-        pass
-
+def unitTest(f, inp, out) : 
+    outs = [f(i) for i in inp]
+    if outs == out : 
+        print("Success")
+    else : 
+        print(f"Returned outputs: {outs}\nDesired outputs: {out}\nAccuracy: {sum([(outs[i] == out[i]) for i in range(len(out))])/len(out)}")
+        print("Failure")
 
 if __name__ == '__main__':
-    x = TwosComplementNumber("0111")
+    x = FloatingPointNumber("01011101", "1011")
     print(int(x))
     print(int(~x))
+    print(x)
+    print(~x)
+    
 
 
