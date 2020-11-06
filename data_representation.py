@@ -1,4 +1,4 @@
-class BinaryString:
+xclass BinaryString:
     def __init__(self, binary):
         self.value = binary
 
