@@ -1,3 +1,5 @@
+import math as m 
+
 class BinaryString:
     def __init__(self, binary):
         self.value = binary
@@ -27,7 +29,7 @@ class BinaryString:
         return self.value
 
     def __getitem__(self, key) : 
-        return self.value[key]
+        return int(self.value[key])
 
     def __add__(self, other):
         return BinaryString(str(self) + str(other)) # Converts both values to a binary string
@@ -41,6 +43,18 @@ class BinaryString:
 
     def __int__(self) : 
         return sum([2**(len(self)-i-1) for i in range(len(self)) if self[i]])
+
+    def __iter__(self) : 
+        return self.value
+
+    def index(self, char) : 
+        return self.value.index(char)
+
+    def hex(self) : 
+        digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F']
+        # Currently dysfunctional
+        # return str([digits[int(self.value[max(0,i-4):i])] for i in range(len(self.value), 0, -4)][::-1])
+
         
 
 class FixPointNumber(BinaryString):
@@ -59,7 +73,7 @@ class FixPointNumber(BinaryString):
 
     def __str__(self):
         if self._binary_point < len(self):
-            return self.value[:self._binary_point] + "." + self.value[self._binary_point:]
+            return '.'.join((self.value[:self._binary_point], self.value[self._binary_point:]))
         else:
             return self.value
 
@@ -88,34 +102,17 @@ class TwosComplementNumber(BinaryString):
     def sign_bit(self):
         return self.msb
 
-    def to_positive(self):
-        return abs(self)
-
     def __neg__(self):
         return self._convert()
 
-    def is_positive(self):
-        if self.sign_bit == "1":
-            return False
-        else:
-            return True
-
-    def is_negative(self):
-        if self.sign_bit == "0":
-            return False
-        else:
-            return True
-
     def __int__(self):
-        bitCalc = lambda a, b: int(a[b])*(2**(len(a)-b-1)) 
-        twoComp = lambda x : sum([bitCalc(x, i) if i else -bitCalc(x, i) for i in range(len(x))])
-        return twoComp(self)
+        return super(TwosComplementNumber, self).__int__()-self[0]*2**len(self)
 
 
 class FloatingPointNumber(TwosComplementNumber):
     def __init__(self, mantissa, exponent):
-        self.mantissa = BinaryString(mantissa)
-        self.exponent = BinaryString(exponent)
+        self.mantissa = TwosComplementNumber(mantissa)
+        self.exponent = TwosComplementNumber(exponent)
 
     @classmethod
     def as_single_string(cls, binary, mantissa_size):
@@ -135,17 +132,31 @@ class FloatingPointNumber(TwosComplementNumber):
 
     @exponent.setter
     def exponent(self, exponent):
-        self._exponent = exponent
+        self._exponent = exponent  
 
-    def __str__(self):
-        return str(self.mantissa + self.exponent)
+    def __str__(self) :
+        supVal = { '0': '\u2070', '1': '\u00b9', '2': '\u00b2', '3': '\u00b3', '4': '\u2074', '5': '\u2075', '6': '\u2076', '7': '\u2077', '8': '\u2078', '9': '\u2079', '-': '\u207b' }
+        expRepr = ''.join([supVal[i] for i in str(int(self.exponent))])
+        try : 
+            point = self.mantissa.index(str(int(not(self.mantissa[0]))))
+        except : 
+            point = len(self.mantissa)-2
+        c1 = self.mantissa[point] 
+        cend = self.mantissa[point+1:]
+        return f'{c1}.{cend}\u2082\u00d72{expRepr}'
+
+    def __repr__(self) : 
+        return str((str(self.mantissa), str(self.exponent)))
 
     def __int__(self):
-        bitCalc = lambda a, b: int(a[b])*(2**(len(a)-b-1)) 
-        twoComp = lambda x : sum([bitCalc(x, i) if i else -bitCalc(x, i) for i in range(len(x))]) # Defines twos complement conversion
-        exp = twoComp(self.exponent) # Convert exponent from twos complement
-        mantissa = twoComp(self.mantissa) # Convert mantissa from twos complement
-        return mantissa*(2**exp)
+        return int(float(self))
+
+    def __float__(self) : 
+        return float(int(self.mantissa)*(2**int(self.exponent)))
+
+    def __invert__(self) : 
+        return FloatingPointNumber(str(~self.mantissa), str(~self.exponent))
+        
 
 def unitTest(f, inp, out) : 
     outs = [f(i) for i in inp]
@@ -156,11 +167,15 @@ def unitTest(f, inp, out) :
         print("Failure")
 
 if __name__ == '__main__':
-    x = FloatingPointNumber("01011101", "1011")
+    x = FloatingPointNumber("1101", "10")
     print(int(x))
     print(int(~x))
+    print(float(x))
+    print(float(~x))
     print(x)
     print(~x)
+    print(repr(x))
+    print(repr(~x))
     
 
 
