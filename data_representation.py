@@ -125,7 +125,7 @@ class TwosComplementNumber(BinaryString):
         return self.msb
 
     def __add__(self, other) : 
-        pass
+        pass 
 
     # def toBin(self, dec) : 
     #     l = 0 
@@ -181,13 +181,14 @@ class FloatingPointNumber(TwosComplementNumber):
             '9': '\u2079', 
             '-': '\u207b' 
         }
-        expRepr = ''.join([supVal[i] for i in str(int(self.exponent))])
+        
         try : 
-            point = self.mantissa.index(str(int(not(self.mantissa[0]))))-1 # Find the index of the value before the first change
+            point = self.mantissa.index(str(int(not(int(self.mantissa[0]))))) # Find the index of the first change
             c = True 
-        except : 
+        except IndexError : 
             c = False # If the value never changes then there should be no point
-        return f'{self.mantissa[point]}.{self.mantissa[point+1:]}\u2082\u00d72{expRepr}' if c else f'{self.mantissa[-1]}\u2082\u00d72{expRepr}'
+        expRepr = ''.join([supVal[i] for i in str(len(self.mantissa[point:])+int(self.exponent))])
+        return f'{self.mantissa[point-1]}.{self.mantissa[point:]}\u2082\u00d72{expRepr}' if c else f'{self.mantissa[-1]}\u2082\u00d72{expRepr}'
 
     def __repr__(self) : 
         return str((str(self.mantissa), str(self.exponent)))
@@ -202,24 +203,8 @@ class FloatingPointNumber(TwosComplementNumber):
         return FloatingPointNumber(str(~self.mantissa), str(~self.exponent))
 
     def __add__(self, other) : 
-        # Normalise both to same exponent
-        # Subsequently convert to the same size through appending to the front. If not(msb) append 0 to front, if msb append 1 to front. 
+        # Add digits such that 
         pass 
-        
-        #print(self.addition(s,o))
-        # subsequently use min(self.exponent, other.exponent) to return to the smaller exponent. 
-        #return FloatingPointNumber(1, )
-
-    def addition(self, s, o, acc = '', c = 0, i = None) : 
-        if len(acc) == len(s) : 
-            return acc 
-        else : 
-            # ((a xor b) and not c) or ((a nor b) and c)
-            # (a and b or c) or (b and c)
-            i = max(len(s),len(o))-len(acc)-1 if i is None else i
-            a, b = int(s[i]), int(o[i])
-            acc = str(((a^b)&int(not c)) | (int(not a|b)&c))+acc
-            return self.addition(s, o, acc, ((a&b|c)|(b&c)), i-1)
 
     def __neg__(self) : 
         return FloatingPointNumber((~self.mantissa)+1, self.exponent)
@@ -234,7 +219,7 @@ def unitTest(f, inp, out) :
         print("Failure")
 
 if __name__ == '__main__':
-    x = FloatingPointNumber("1101101", "10")
+    x = FloatingPointNumber("0010010", "01")
     print(int(x))
     print(int(~x))
     print(float(x))
