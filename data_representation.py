@@ -10,6 +10,18 @@ class BinaryString:
                 raise ValueError("Invalid binary string")
         else : 
             raise ValueError("Binary string given must be a string")
+    
+    def display(self) : 
+        print("Int: ",int(self))
+        print("Float: ",float(self))
+        print("Inverse int: ",int(~self))
+        print("Inverse float: ",float(~self))
+        print("Repr: ",repr(self))
+        print("String: ",str(self))
+        print("Inverse repr: ",repr(~self))
+        print("Inverse string: ",str(~self))
+        print(self)
+        print(~self)
 
     @property
     def value(self):
@@ -125,16 +137,22 @@ class TwosComplementNumber(BinaryString):
     def sign_bit(self):
         return self.msb
 
+    def display(self) : 
+        super(TwosComplementNumber, self).display()
+
     def __add__(self, other) : 
         s = max(len(other)-len(self),0)*self.value[0]+self.value
         o = max(len(self)-len(other),0)*other.value[0]+other.value
         acc = ''
         c = 0 
+        ofCheck = len(self)-1
         for i, j in zip(s[::-1], o[::-1]) : 
             a, b = int(i), int(j)
             acc = str(a^b^c)+acc
-            c = ((c&(a|b))|(a&b))
-        # Check for overflow - If it occurs raise ValueError
+            c = (c&(a|b))|(a&b)
+            ofCheck -= 1 
+            if not ofCheck and ((c and (not int(s[0]) and not int(o[0]))) or (not c and (int(s[0]) and int(o[0])))) :
+                acc = s[0]+acc # Overflow will never be more than a single extra bit
         return TwosComplementNumber(acc)
 
     # def toBin(self, dec) : 
@@ -224,7 +242,7 @@ class FloatingPointNumber(TwosComplementNumber):
 
     def __add__(self, other) : 
         # lshift the larger exponent by its exponent minus the other exponent
-        s = self.mantissa << max(int(self.exponent-other.exponent),0)
+        s = self.mantissa << max(int(self.exponent-other.exponent),0) # Error occurs here
         o = other.mantissa << max(int(other.exponent-self.exponent),0)
         if int(self.exponent) <= int(other.exponent) : 
             e = str(self.exponent) 
@@ -245,17 +263,13 @@ def unitTest(f, inp, out) :
         print("Failure")
 
 if __name__ == '__main__':
-    x = FloatingPointNumber("0010010", "01")
-    print(int(x))
-    print(int(~x))
-    print(float(x))
-    print(float(~x))
-    print(x)
-    print(~x)
-    print(repr(x))
-    print(repr(~x))
-    print(float(x+~x))
-    print(float(x-~x))
+    
+    a = FloatingPointNumber("0010010", "01")
+    b = FloatingPointNumber("10", "10")
+    a.display()
+    b.display()
+    print(int(a+b))
+    print(float(a+b))
     
 
 
