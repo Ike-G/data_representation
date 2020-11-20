@@ -53,7 +53,7 @@ class BinaryString:
 
     def __invert__(self):
         inverted = ''.join([str(int(not bool(int(bit)))) for bit in self.value])
-        return self.__class__(inverted)
+        return BinaryString(inverted)
 
     def __int__(self) : 
         return sum([2**(len(self)-i-1) for i in range(len(self)) if int(self[i])]) # CHANGE
@@ -111,9 +111,10 @@ class TwosComplementNumber(BinaryString):
         return self
 
     def _convert(self):
-        leading_one = len(self)
-        while leading_one != "1" and leading_one > 0:
-            leading_one -= 1
+        try : 
+            leading_one = self.index('1')
+        except : 
+            leading_one = 0
 
         flipped_bits = ~BinaryString(self.value[:leading_one])
         unflipped_bits = BinaryString(self.value[leading_one:])
@@ -125,7 +126,16 @@ class TwosComplementNumber(BinaryString):
         return self.msb
 
     def __add__(self, other) : 
-        pass 
+        s = max(len(other)-len(self),0)*self.value[0]+self.value
+        o = max(len(self)-len(other),0)*other.value[0]+other.value
+        acc = ''
+        c = 0 
+        for i, j in zip(s[::-1], o[::-1]) : 
+            a, b = int(i), int(j)
+            acc = str(a^b^c)+acc
+            c = ((c&(a|b))|(a&b))
+        # Check for overflow - If it occurs raise ValueError
+        return TwosComplementNumber(acc)
 
     # def toBin(self, dec) : 
     #     l = 0 
@@ -136,10 +146,20 @@ class TwosComplementNumber(BinaryString):
         pass 
 
     def __neg__(self):
-        return self._convert()
+        temp = TwosComplementNumber(''.join([str(int(not(int(self[i])))) for i in range(len(self))]))
+        return TwosComplementNumber(str(temp+TwosComplementNumber('01')))
 
     def __int__(self):
         return super(TwosComplementNumber, self).__int__()-int(self[0])*2**len(self)
+
+    def __sub__(self, other) : 
+        return self+(-other)
+    
+    def __le__(self, other) : 
+        pass
+
+    def __invert__(self) : 
+        return TwosComplementNumber(str(super().__invert__()))
 
 
 class FloatingPointNumber(TwosComplementNumber):
@@ -203,11 +223,17 @@ class FloatingPointNumber(TwosComplementNumber):
         return FloatingPointNumber(str(~self.mantissa), str(~self.exponent))
 
     def __add__(self, other) : 
-        # Add digits such that 
-        pass 
+        # lshift the larger exponent by its exponent minus the other exponent
+        s = self.mantissa << max(int(self.exponent-other.exponent),0)
+        o = other.mantissa << max(int(other.exponent-self.exponent),0)
+        if int(self.exponent) <= int(other.exponent) : 
+            e = str(self.exponent) 
+        else : 
+            e = str(other.exponent)
+        return FloatingPointNumber(str(TwosComplementNumber(s)+TwosComplementNumber(o)),e)
 
     def __neg__(self) : 
-        return FloatingPointNumber((~self.mantissa)+1, self.exponent)
+        return FloatingPointNumber(str(-TwosComplementNumber(str(self.mantissa))), str(self.exponent))
         
 
 def unitTest(f, inp, out) : 
@@ -228,6 +254,8 @@ if __name__ == '__main__':
     print(~x)
     print(repr(x))
     print(repr(~x))
+    print(float(x+~x))
+    print(float(x-~x))
     
 
 
