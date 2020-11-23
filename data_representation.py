@@ -77,14 +77,21 @@ class BinaryString:
         return self.value.index(char)
 
     def hex(self) : 
-        digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F']
-        # Currently dysfunctional
-        # return str([digits[int(self.value[max(0,i-4):i])] for i in range(len(self.value), 0, -4)][::-1])
+        digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F']
+        s = '0'*(4*((1+(len(self)-1)//4))-len(self))+self.value
+        print(s)
+        return re.match(r'\b0*([A-F0-9]+|0)\b',''.join([digits[int(BinaryString(s[i:i+4]))] for i in range(0,len(s),4)])).group(1)
 
     def __lshift__(self, shiftVal) : 
         if type(shiftVal) is not int or shiftVal < 0: 
             raise Exception("Invalid shift value. Must be of type positive integer.")
         return self.value+str(0)*shiftVal
+
+    def __float__(self) : 
+        return float(int(self))
+
+    def __mul__(self, other) : 
+        pass 
 
 
 
@@ -205,6 +212,9 @@ class FloatingPointNumber(TwosComplementNumber):
     def exponent(self, exponent):
         self._exponent = exponent  
 
+    def hex(self) : 
+        return (TwosComplementNumber(self.mantissa).hex(), TwosComplementNumber(self.value).hex())
+
     def __str__(self) : # BUGGED - Returns 1.1*2**0 for FloatingPointNumber('1','0'), and returns nothing for FloatingPointNumber
         supVal = { 
             '0': '\u2070', 
@@ -252,6 +262,40 @@ class FloatingPointNumber(TwosComplementNumber):
 
     def __neg__(self) : 
         return FloatingPointNumber(str(-TwosComplementNumber(str(self.mantissa))), str(self.exponent))
+
+
+class ComplexBinary(FloatingPointNumber) : 
+    def __init__(self, reMant, reExp, imMant, imExp) : 
+        self.real = FloatingPointNumber(reMant, reExp)
+        self.imaginary = FloatingPointNumber(imMant, imExp) 
+    
+    def __str__(self) : 
+        return f'{float(self.imaginary)}i+{float(self.real)}j'
+    
+    def __repr__(self) : 
+        return (self.real, self.imaginary)
+    
+    def __add__(self, other) : 
+        newReal = self.real+other.real
+        newIm = self.imaginary+other.imaginary
+        return ComplexBinary(newReal.mantissa, newReal.exponent, newIm.mantissa, newIm.exponent)
+
+    def __neg__(self) : 
+        newReal = -self.real
+        newIm = -self.imaginary
+        return ComplexBinary(newReal.mantissa, newReal.exponent, newIm.mantissa, newReal.exponent)
+
+    def __sub__(self, other) : 
+        return self+(-other)
+
+    def __mul__(self, other) : 
+        newReal = int(self.real)*int(other.real)-(int(self.imaginary)*int(other.imaginary))
+        newIm = int(self.real)*int(other.imaginary)+int(self.imaginary)*int(other.real)
+        pass
+        
+
+
+    
         
 
 def unitTest(f, inp, out) : 
