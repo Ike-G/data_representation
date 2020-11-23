@@ -145,15 +145,15 @@ class TwosComplementNumber(BinaryString):
         o = max(len(self)-len(other),0)*other.value[0]+other.value
         acc = ''
         c = 0 
-        ofCheck = len(self)-1
+        ofCheck, fixOF = len(self)-1, False
         for i, j in zip(s[::-1], o[::-1]) : 
             a, b = int(i), int(j)
             acc = str(a^b^c)+acc
             c = (c&(a|b))|(a&b)
             ofCheck -= 1 
             if not ofCheck and ((c and (not int(s[0]) and not int(o[0]))) or (not c and (int(s[0]) and int(o[0])))) :
-                acc = s[0]+acc # Overflow will never be more than a single extra bit
-        return TwosComplementNumber(acc)
+                fixOF = True # Overflow will never be more than a single extra bit
+        return TwosComplementNumber(s[0]+acc) if fixOF else TwosComplementNumber(acc)
 
     # def toBin(self, dec) : 
     #     l = 0 
@@ -242,8 +242,8 @@ class FloatingPointNumber(TwosComplementNumber):
 
     def __add__(self, other) : 
         # lshift the larger exponent by its exponent minus the other exponent
-        s = self.mantissa << max(int(self.exponent-other.exponent),0) # Error occurs here
-        o = other.mantissa << max(int(other.exponent-self.exponent),0)
+        s = self.mantissa << max(int(self.exponent)-int(other.exponent),0) # Error occurs here
+        o = other.mantissa << max(int(other.exponent)-int(self.exponent),0)
         if int(self.exponent) <= int(other.exponent) : 
             e = str(self.exponent) 
         else : 
@@ -263,13 +263,14 @@ def unitTest(f, inp, out) :
         print("Failure")
 
 if __name__ == '__main__':
-    
     a = FloatingPointNumber("0010010", "01")
     b = FloatingPointNumber("10", "10")
     a.display()
     b.display()
     print(int(a+b))
     print(float(a+b))
+    print(int(a-b))
+    print(float(a-b))
     
 
 
